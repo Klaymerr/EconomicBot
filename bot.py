@@ -25,12 +25,12 @@ class UserInfo(StatesGroup):
 @dp.message(CommandStart())
 async def start(message: Message):
     kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='Профиль')],
-                                       [KeyboardButton(text='НеАктуальные котировки')],
+                                       [KeyboardButton(text='Котировки')],
                                        [KeyboardButton(text='Новости Пензы')]],
                              resize_keyboard=True,
                              input_field_placeholder='И че делать будем то?',
                              )
-    await message.answer('hi', reply_markup=kb)
+    await message.answer('Добро пожаловать!', reply_markup=kb)
 
 @dp.message(F.text == 'Профиль')
 async def Reg(message:Message, state : FSMContext):
@@ -40,10 +40,23 @@ async def Reg(message:Message, state : FSMContext):
         data = open(user_path + '/' + id+'.txt')
         for i in data:
             info = [x for x in i.split()]
-        await message.answer(f'Имя: {info[0]}\nВозраст: {info[1]}')
+
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Изменить', callback_data='change')]])
+        await message.answer(f'Имя: {info[0]}\nВозраст: {info[1]}', reply_markup=kb)
     else:
         await state.set_state(UserInfo.name)
         await message.answer('Введите имя:')
+
+@dp.callback_query(lambda c : c.data == 'change')
+async def ch(callback: CallbackQuery, state : FSMContext):
+    try:
+        os.remove(user_path + '/' + str(callback.from_user.id) + '.txt')
+    except FileNotFoundError:
+        None
+    await callback.answer('Как скажешь')
+    await state.set_state(UserInfo.name)
+    await callback.message.answer('Введите имя:')
+
 
 @dp.message(UserInfo.name)
 async def name(message : Message, state : FSMContext):
@@ -70,14 +83,16 @@ async def News(message: Message):
         f = open(news_path + '/' + name, encoding = 'utf-8')
         await message.answer(f.read())
 
-@dp.message(F.text == 'НеАктуальные котировки')
+@dp.message(F.text == 'Котировки')
 async def Cot(message: Message):
+    mes = await message.answer('ЩАЩАЩА СЧИТАЮ ПОДОЖДИ ЩА БУДЕТ ВСЁ...')
     f = open('quotes.txt')
     t = ''
     for line in f:
         resp = requests.get(f"https://finnhub.io/api/v1/quote?symbol={line.strip()}&token={fin_token}").json()
         t += line.strip() + '\t' + str(resp["c"]) + '\n'
 
+    await mes.delete()
     await message.answer(t)
 
 
