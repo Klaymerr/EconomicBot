@@ -68,35 +68,35 @@ async def age(message : Message, state : FSMContext):
     await message.answer(f'Сногсшибательно\nИмя: {data["name"]}\nВозраст: {data["age"]}')
 
     id = str(message.from_user.id)
-    f = open(user_path + '/' + id + '.json', 'w')
+    f = open(user_path + '/' + id + '.json')
     json.dump(data, f, ensure_ascii=False, indent=4)
     f.close()
 
     await state.clear()
 
-
-news = ''
-news_time = 0
-
 @router.message(F.text == 'Новости Пензы')
 async def News(message: Message):
-    global news
-    global news_time
-    if(time.time() - news_time < 300):
-        await message.answer(text = news, parse_mode = ParseMode.HTML)
+    file = open('news.json')
+    f = json.load(file)
+    file.close()
+    if(time.time() - f['time'] < 3):
+        await message.answer(text = f['text'], parse_mode = ParseMode.HTML)
     else:
         resp = requests.get(f'https://api.nytimes.com/svc/news/v3/content/all/business.json?limit=3&offset=0&api-key={ny_token}')
         if(resp.status_code == 200):
-            news = ''
+            news = {'text' : ''}
             for i in range(3):
                 title = str(resp.json()["results"][i]["title"])
                 text = str(resp.json()["results"][i]["abstract"])
                 url = str(resp.json()["results"][i]['url'])
-                if(news != ''):
-                    news += '\n\n'
-                news += f"<a href='{url}'>{title}</a>" + f'\n\t{text}'
-            news_time = time.time()
-            await message.answer(text = news, parse_mode = ParseMode.HTML)
+                if(news['text'] != ''):
+                    news['text'] += '\n\n'
+                news['text'] += f"<a href='{url}'>{title}</a>" + f'\n\t{text}'
+            news['time'] = time.time()
+            await message.answer(text = news['text'], parse_mode = ParseMode.HTML)
+            file = open('news.json', 'w')
+            json.dump(news, file, ensure_ascii=False, indent=4)
+            file.close()
         else:
             await message.answer('Мир прогнил никаких тебе новостей')
 
