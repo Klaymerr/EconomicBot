@@ -68,7 +68,7 @@ async def age(message : Message, state : FSMContext):
     await message.answer(f'Сногсшибательно\nИмя: {data["name"]}\nВозраст: {data["age"]}')
 
     id = str(message.from_user.id)
-    f = open(user_path + '/' + id + '.json')
+    f = open(user_path + '/' + id + '.json', 'w')
     json.dump(data, f, ensure_ascii=False, indent=4)
     f.close()
 
