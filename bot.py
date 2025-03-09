@@ -1,6 +1,7 @@
 import asyncio
 import os.path
 import requests
+import json
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
@@ -36,13 +37,12 @@ async def start(message: Message):
 async def Reg(message:Message, state : FSMContext):
     id = str(message.from_user.id)
 
-    if os.path.exists(user_path + '/' + id + '.txt'):
-        data = open(user_path + '/' + id+'.txt')
-        for i in data:
-            info = [x for x in i.split()]
+    if os.path.exists(user_path + '/' + id + '.json'):
+        data = json.load(open(user_path + '/' + id+'.json'))
+        data = json.load(open(user_path + '/' + id+'.json'))
 
         kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text='Изменить', callback_data='change')]])
-        await message.answer(f'Имя: {info[0]}\nВозраст: {info[1]}', reply_markup=kb)
+        await message.answer(f'Имя: {data["name"]}\nВозраст: {data["age"]}', reply_markup=kb)
     else:
         await state.set_state(UserInfo.name)
         await message.answer('Введите имя:')
@@ -50,7 +50,7 @@ async def Reg(message:Message, state : FSMContext):
 @dp.callback_query(lambda c : c.data == 'change')
 async def ch(callback: CallbackQuery, state : FSMContext):
     try:
-        os.remove(user_path + '/' + str(callback.from_user.id) + '.txt')
+        os.remove(user_path + '/' + str(callback.from_user.id) + '.json')
     except FileNotFoundError:
         None
     await callback.answer('Как скажешь')
@@ -71,8 +71,9 @@ async def age(message : Message, state : FSMContext):
     await message.answer(f'Сногсшибательно\nИмя: {data["name"]}\nВозраст: {data["age"]}')
 
     id = str(message.from_user.id)
-    f = open(user_path + '/' + id + '.txt', 'w')
-    f.write(data["name"] + ' ' + data["age"])
+    f = open(user_path + '/' + id + '.json', 'w')
+    json.dump(data, f, ensure_ascii=False, indent=4)
+    # f.write(data["name"] + ' ' + data["age"])
     f.close()
 
     await state.clear()
@@ -89,8 +90,13 @@ async def Cot(message: Message):
     f = open('quotes.txt')
     t = ''
     for line in f:
-        resp = requests.get(f"https://finnhub.io/api/v1/quote?symbol={line.strip()}&token={fin_token}").json()
-        t += line.strip() + '\t' + str(resp["c"]) + '\n'
+        resp = requests.get(f"https://finnhub.io/api/v1/quote?symbol={line.strip()}&token={fin_token}")
+        if(resp.status_code == 200):
+            t += line.strip() + '\t' + str(resp.json()["c"]) + '\n'
+        else:
+            t = 'AAAAAAAAAA ИДИ НАХУЙ'
+            break
+
 
     await mes.delete()
     await message.answer(t)
