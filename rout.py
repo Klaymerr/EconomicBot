@@ -3,14 +3,13 @@ import os.path
 import requests
 import json
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import Command, CommandStart
+from aiogram import F, Router
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types import Message, CallbackQuery
-from jedi.api.refactoring import inline
-from aiogram import Router
+
 from secrets import user_path, news_path, fin_token
 
 router = Router()
