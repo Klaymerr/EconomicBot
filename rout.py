@@ -2,15 +2,17 @@ import asyncio
 import os.path
 import requests
 import json
+import random
 
 from aiogram import F, Router
+from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types import Message, CallbackQuery
 
-from secrets import user_path, news_path, fin_token
+from secrets import user_path, news_path, fin_token, ny_token
 
 router = Router()
 
@@ -67,16 +69,21 @@ async def age(message : Message, state : FSMContext):
     id = str(message.from_user.id)
     f = open(user_path + '/' + id + '.json', 'w')
     json.dump(data, f, ensure_ascii=False, indent=4)
-    # f.write(data["name"] + ' ' + data["age"])
     f.close()
 
     await state.clear()
 
 @router.message(F.text == 'Новости Пензы')
 async def News(message: Message):
-    for name in os.listdir(news_path):
-        f = open(news_path + '/' + name, encoding = 'utf-8')
-        await message.answer(f.read())
+    offset = random.randint(0,100)
+    resp = requests.get(f'https://api.nytimes.com/svc/news/v3/content/all/business.json?limit=1&offset={offset}&api-key={ny_token}')
+    if(resp.status_code == 200):
+        title = str(resp.json()["results"][0]["title"])
+        text = str(resp.json()["results"][0]["abstract"])
+        url = str(resp.json()["results"][0]['url'])
+        await message.answer(text = f"<a href='{url}'>{title}</a>" + f'\n\n{text}', parse_mode = ParseMode.HTML)
+    else:
+        await message.answer('Мир прогнил никаких тебе новостей')
 
 @router.message(F.text == 'Котировки')
 async def Cot(message: Message):
