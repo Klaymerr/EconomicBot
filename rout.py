@@ -79,7 +79,7 @@ async def News(message: Message):
     file = open('news.json')
     f = json.load(file)
     file.close()
-    if(time.time() - f['time'] < 3):
+    if(time.time() - f['time'] < 300):
         await message.answer(text = f['text'], parse_mode = ParseMode.HTML)
     else:
         resp = requests.get(f'https://api.nytimes.com/svc/news/v3/content/all/business.json?limit=3&offset=0&api-key={ny_token}')
