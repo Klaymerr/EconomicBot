@@ -1,5 +1,6 @@
 import asyncio
 import os.path
+import requests
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command, CommandStart
@@ -9,7 +10,8 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardBut
 from aiogram.types import Message, CallbackQuery
 from jedi.api.refactoring import inline
 
-bot_token = '7648099339:AAHH5sn7k7pRSYt6ua6dKYwu9hhNnZ1v5LU'
+bot_token = ''
+fin_token = ''
 user_path = 'users'
 news_path = 'news'
 
@@ -71,14 +73,12 @@ async def News(message: Message):
 @dp.message(F.text == 'НеАктуальные котировки')
 async def Cot(message: Message):
     f = open('quotes.txt')
-    nw = []
+    t = ''
     for line in f:
-        nw.append([x for x in line.split()])
+        resp = requests.get(f"https://finnhub.io/api/v1/quote?symbol={line.strip()}&token={fin_token}").json()
+        t += line.strip() + '\t' + str(resp["c"]) + '\n'
 
-    text = ''
-    for x in nw:
-        text += x[0] + ' ' + str(x[1]) + '$\n'
-    await message.answer(text)
+    await message.answer(t)
 
 
 async def main() -> None:
