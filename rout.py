@@ -2,6 +2,7 @@ import asyncio
 import os.path
 import requests
 import json
+import time
 import random
 
 from aiogram import F, Router
@@ -12,7 +13,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types import Message, CallbackQuery
 
-from secrets import user_path, news_path, fin_token, ny_token
+from secrets import user_path, fin_token, ny_token
 
 router = Router()
 
@@ -73,17 +74,30 @@ async def age(message : Message, state : FSMContext):
 
     await state.clear()
 
+
+news = ''
+news_time = 0
+
 @router.message(F.text == 'Новости Пензы')
 async def News(message: Message):
-    offset = random.randint(0,100)
-    resp = requests.get(f'https://api.nytimes.com/svc/news/v3/content/all/business.json?limit=1&offset={offset}&api-key={ny_token}')
-    if(resp.status_code == 200):
-        title = str(resp.json()["results"][0]["title"])
-        text = str(resp.json()["results"][0]["abstract"])
-        url = str(resp.json()["results"][0]['url'])
-        await message.answer(text = f"<a href='{url}'>{title}</a>" + f'\n\n{text}', parse_mode = ParseMode.HTML)
+    global news
+    global news_time
+    if(time.time() - news_time < 300):
+        await message.answer(text = news, parse_mode = ParseMode.HTML)
     else:
-        await message.answer('Мир прогнил никаких тебе новостей')
+        resp = requests.get(f'https://api.nytimes.com/svc/news/v3/content/all/business.json?limit=3&offset=0&api-key={ny_token}')
+        if(resp.status_code == 200):
+            news = ''
+            for i in range(3):
+                title = str(resp.json()["results"][i]["title"])
+                text = str(resp.json()["results"][i]["abstract"])
+                url = str(resp.json()["results"][i]['url'])
+                if(news != ''):
+                    news += '\n\n'
+                news += f"<a href='{url}'>{title}</a>" + f'\n\t{text}'
+            await message.answer(text = news, parse_mode = ParseMode.HTML)
+        else:
+            await message.answer('Мир прогнил никаких тебе новостей')
 
 @router.message(F.text == 'Котировки')
 async def Cot(message: Message):
