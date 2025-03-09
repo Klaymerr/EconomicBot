@@ -95,6 +95,7 @@ async def News(message: Message):
                 if(news != ''):
                     news += '\n\n'
                 news += f"<a href='{url}'>{title}</a>" + f'\n\t{text}'
+            news_time = time.time()
             await message.answer(text = news, parse_mode = ParseMode.HTML)
         else:
             await message.answer('Мир прогнил никаких тебе новостей')
